@@ -5,28 +5,27 @@
         <div class="wrapper">
           <div class="result">
             <input class="query" type="text" v-model="query">
-            <input class="output" type="text" v-model="result">
           </div>
           <div class="numbers">
-            <div class="row 4" @click="test($event)">
+            <div class="row 4" @click="test($event.target.textContent)">
               <div class="item">7</div>
               <div class="item">8</div>
               <div class="item">9</div>
               <div class="item action">÷</div>
             </div>
-            <div class="row 3" @click="test($event)">
+            <div class="row 3" @click="test($event.target.textContent)">
               <div class="item">4</div>
               <div class="item">5</div>
               <div class="item">6</div>
-              <div class="item action">x</div>
+              <div class="item action" @click="test('*')">x</div>
             </div>
-            <div class="row 2" @click="test($event)">
+            <div class="row 2" @click="test($event.target.textContent)">
               <div class="item">1</div>
               <div class="item">2</div>
               <div class="item">3</div>
               <div class="item action">-</div>
             </div>
-            <div class="row 1" @click="test($event)">
+            <div class="row 1" @click="test($event.target.textContent)">
               <div class="item">0</div>
               <div class="item">.</div>
               <div class="item">=</div>
@@ -46,40 +45,51 @@ export default {
   data () {
     return {
       result: 0,
-      query: ''
+      query: '',
+      operator: '',
+      firstNumber: null,
+      secondNumber: null
     }
+  },
+  mounted () {
+    document.addEventListener('keypress', (event) => this.test(event.key))
   },
   methods: {
     test (event) {
       const functions = {
         '+': (number1, number2) => {
-          return number1 + number2
+          return Number(number1) + Number(number2)
         },
         '-': (number1, number2) => {
-          return number1 - number2
+          return Number(number1) - Number(number2)
         },
-        x: (number1, number2) => {
-          return number1 * number2
+        '*': (number1, number2) => {
+          return Number(number1) * Number(number2)
         },
         '÷': (number1, number2) => {
-          return number1 / number2
+          return Number(number1) / Number(number2)
         }
       }
-
-      if (event.toElement.innerText === '=') {
-        const length = this.query.length
-        let firstNumber = ''
-        let operator = ''
-        let secondNumber = ''
-        for (let i = 0; i < length; i++) {
-          if (isNaN(this.query[i])) {
-            if (isNaN(this.query[i]) && event.toElement.innerText !== '=') operator = this.query[i]
-          }else secondNumber += Number(this.query[i])
-          } else firstNumber += Number(this.query[i])
+      if (isNaN(event) && event !== '.') {
+        if (functions[event]) {
+          if (!this.firstNumber) {
+            this.firstNumber = Number(this.query)
+            this.query = ''
+            this.operator = event
+          } else {
+            this.operator = event
+            this.secondNumber = Number(this.query)
+            const result = functions[this.operator](this.firstNumber, this.secondNumber)
+            this.query = result
+            this.firstNumber = result
+          }
+        } else if (event === '=' || event === 'Enter') {
+          this.result = functions[this.operator](this.firstNumber, this.query)
+          this.query = this.result
+          console.log(this.result)
+          this.firstNumber = this.result
         }
-        console.log(operator)
-        this.result = functions[operator](firstNumber, secondNumber)
-      } else this.query += event.toElement.innerText
+      } else this.query += event
     }
   }
 }
@@ -105,14 +115,9 @@ export default {
       justify-content: center;
       margin-bottom: 10px;
       .query {
+        text-align: right;
         border: 1px solid;
         outline: none;
-      }
-      .output {
-        text-align: left;
-        border: none;
-        outline: none;
-        width: 70px;
       }
     }
   }
